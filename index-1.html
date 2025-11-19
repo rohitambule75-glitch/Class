@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="platform-title">Elite AI Learning Platform</title>
+    <style>
+        :root { --primary-color: #5e5ce6; --primary-hover: #4845d2; --bg-color: #f4f6f9; --panel-bg: #ffffff; --text-color: #2c3e50; --header-bg: linear-gradient(135deg, var(--primary-color), var(--primary-hover)); --border-color: #e0e0e0; }
+        .dark-mode { --bg-color: #1a1a2e; --panel-bg: #16213e; --text-color: #e0e6f0; --border-color: #3a476f; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; background-color: var(--bg-color); color: var(--text-color); display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 10px; box-sizing: border-box; }
+        .container { width: 100%; max-width: 1100px; background: var(--panel-bg); border-radius: 16px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1); overflow: hidden; }
+        .header { background: var(--header-bg); color: white; padding: 20px; text-align: center; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; gap: 15px; }
+        .header img { max-height: 40px; }
+        .panel-content { padding: 20px; }
+        .scrollable-content { max-height: 70vh; overflow-y: auto; padding-right: 15px; }
+        h2, h3, h4 { color: var(--text-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-top: 0; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--panel-bg); color: var(--text-color); font-size: 1rem; box-sizing: border-box; }
+        .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 8px; color: white; background-color: var(--primary-color); cursor: pointer; font-size: 1rem; margin-top: 10px; text-align: center; box-sizing: border-box; }
+        .btn:hover { background-color: var(--primary-hover); }
+        .btn-small { padding: 8px 12px; font-size: 0.85rem; margin-left: 5px; margin-top: 5px; display: inline-block; width: auto; }
+        .btn-ai { background-color: #28a745; } .btn-danger { background-color: #dc3545; }
+        .hidden { display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border-color); }
+        .tabs { display: flex; border-bottom: 2px solid var(--border-color); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .tab-button { background: none; border: none; padding: 15px; cursor: pointer; font-size: 1rem; white-space: nowrap; }
+        .tab-button.active { border-bottom: 3px solid var(--primary-color); font-weight: bold; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); }
+        .modal-content { background-color: var(--panel-bg); margin: 10% auto; padding: 20px; border: 1px solid var(--border-color); width: 90%; max-width: 800px; border-radius: 10px; position: relative; }
+        .close-button { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        
+        /* --- MOBILE VIEW --- */
+        @media (max-width: 768px) {
+            body { padding: 0; }
+            .container { border-radius: 0; min-height: 100vh; }
+            .header { font-size: 1.4rem; padding: 15px; }
+            .panel-content { padding: 15px; }
+            .scrollable-content { max-height: calc(100vh - 150px); }
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { position: absolute; top: -9999px; left: -9999px; }
+            tr { border: 1px solid var(--border-color); margin-bottom: 10px; }
+            td { border: none; border-bottom: 1px solid #eee; position: relative; padding-left: 50%; text-align: right; display: flex; align-items: center; justify-content: flex-end; }
+            td:before { content: attr(data-label); position: absolute; left: 10px; width: 45%; padding-right: 10px; white-space: nowrap; text-align: left; font-weight: bold; }
+            .btn-small { display: inline-block; width: auto; margin: 5px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Login Panel -->
+        <div id="login-panel">
+            <div class="header"><img id="login-logo" alt="logo"><span id="login-header"></span></div>
+            <div class="panel-content"><h2>Enter Access Key</h2><div class="form-group"><input type="text" id="access-key" placeholder="Enter 'Admin' or a generated key"></div><button class="btn" onclick="app.login()">Login</button></div>
+        </div>
+
+        <!-- Main App Panel (Rendered by JS) -->
+        <div id="main-app-panel" class="hidden"></div>
+    </div>
+    
+    <!-- Modal -->
+    <div id="app-modal" class="modal"><div class="modal-content"><span class="close-button" onclick="app.closeModal()">&times;</span><div id="modal-body"></div></div></div>
+
+<script>
+class EliteLearningApp {
+    constructor() {
+        this.state = {
+            platform: { name: "Elite AI Learning Platform", logoUrl: "https://img.icons8.com/color/96/000000/galaxy.png", primaryColor: "#5e5ce6" },
+            content: [
+                { id: Date.now() - 200000, subject: 'Physics', topic: 'Laws of Motion', linkUrl: 'https://www.youtube.com/watch?v=_d8_4A48KdE', notes: '...' },
+                { id: Date.now() - 100000, subject: 'Chemistry', topic: 'Chemical Bonding', linkUrl: 'https://en.wikipedia.org/wiki/Chemical_bond', notes: '...' },
+            ],
+            users: { "User-DEMO": { name: 'Alice', role: 'user', bio: 'Lifelong learner.', avatar: '👩‍🎓', xp: 150, isBanned: false, createdAt: Date.now() - 500000000, activity: ['Account Created'] } },
+            keys: { "Admin": { role: 'admin', expiry: Date.now() + 365*864e5 }, "User-DEMO": { role: 'user', expiry: Date.now() + 30*864e5 } },
+            feedback: [{ from: 'Alice', message: 'More physics content please!' }],
+            loginHistory: [],
+            currentUserKey: null,
+        };
+        document.addEventListener('DOMContentLoaded', this.init.bind(this));
+    }
+
+    init() { this.applySettings(); }
+    login() {
+        const key = document.getElementById('access-key').value.trim();
+        const keyData = this.state.keys[key];
+        if (keyData && new Date(keyData.expiry) > Date.now()) {
+            this.state.currentUserKey = key;
+            this.logHistory(`Login success for key: ${key.substring(0,8)}...`);
+            const userRole = this.state.users[key]?.role || keyData.role;
+            if (userRole === 'admin') { this.admin.render(); }
+            else { 
+                if (this.state.users[key]?.isBanned) { alert('This account is banned.'); this.logout(); return; }
+                this.user.render(); 
+            }
+            document.getElementById('login-panel').classList.add('hidden');
+            document.getElementById('main-app-panel').classList.remove('hidden');
+        } else { alert('Invalid or expired key.'); }
+    }
+    logout() { document.getElementById('login-panel').classList.remove('hidden'); document.getElementById('main-app-panel').classList.add('hidden'); this.state.currentUserKey = null; }
+    logHistory(msg) { this.state.loginHistory.unshift(`[${new Date().toLocaleString()}] ${msg}`); if (this.state.loginHistory.length > 50) this.state.loginHistory.pop(); }
+    applySettings() {
+        document.documentElement.style.setProperty('--primary-color', this.state.platform.primaryColor);
+        document.querySelectorAll('#login-header').forEach(el => el.textContent = this.state.platform.name);
+        document.querySelectorAll('#login-logo').forEach(el => el.src = this.state.platform.logoUrl);
+    }
+    openModal(title, content) { document.getElementById('modal-body').innerHTML = `<h2>${title}</h2>${content}`; document.getElementById('app-modal').style.display = 'block'; }
+    closeModal() { document.getElementById('app-modal').style.display = 'none'; document.getElementById('modal-body').innerHTML = ''; }
+    
+    // --- ADMIN MODULE ---
+    admin = {
+        render: () => {
+            const panel = document.getElementById('main-app-panel');
+            panel.innerHTML = `<div class="header"><img src="${this.state.platform.logoUrl}" alt="logo"><span>${this.state.platform.name}</span></div><div class="tabs" id="admin-tabs"></div><div id="admin-tab-content" class="scrollable-content panel-content"></div><div class="panel-content" style="border-top: 1px solid var(--border-color);"><button class="btn btn-secondary" onclick="app.logout()">Logout</button></div>`;
+            document.getElementById('admin-tabs').innerHTML = Object.keys(this.admin.tabs).map(t => `<button class="tab-button" onclick="app.admin.openTab(event, '${t}')">${t}</button>`).join('');
+            this.admin.openTab(null, 'Dashboard');
+        },
+        openTab: (evt, name) => {
+            document.querySelectorAll('#admin-tabs .tab-button').forEach(t => t.classList.remove('active'));
+            if(evt) evt.currentTarget.classList.add('active'); else document.querySelector('#admin-tabs .tab-button').classList.add('active');
+            document.getElementById('admin-tab-content').innerHTML = this.admin.tabs[name]();
+        },
+        tabs: {
+            Dashboard: () => {
+                const adminName = this.state.users[this.state.currentUserKey]?.name || 'Admin';
+                return `<h3>Welcome, ${adminName}</h3><p>${new Date().toDateString()}</p><h3>Recent Logins</h3><button class="btn btn-small btn-danger" onclick="app.state.loginHistory = []; app.admin.openTab(null, 'Dashboard')">Clear Log</button><div class="ai-output" style="max-height:150px; overflow-y:auto;">${this.state.loginHistory.join('<br>')}</div>`;
+            },
+            Content: () => `<h3>Content</h3><button class="btn" onclick="app.admin.showContentForm()">+ Add Content</button><table><thead><tr><th>Topic</th><th>Subject</th><th>Actions</th></tr></thead><tbody>
+                ${this.state.content.map(c => `<tr><td data-label="Topic">${c.topic}</td><td data-label="Subject">${c.subject || 'N/A'}</td><td data-label="Actions"><button class="btn-small" onclick="app.admin.showContentForm(${c.id})">Edit</button><button class="btn-small btn-danger" onclick="app.admin.deleteContent(${c.id})">Del</button></td></tr>`).join('')}</tbody></table>`,
+            Users: () => `<h3>Users</h3><input id="user-search" onkeyup="app.admin.openTab(null, 'Users')" placeholder="Search by name..."><table><thead><tr><th>Name</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+                ${Object.entries(this.state.users).filter(([k,u])=>u.name.toLowerCase().includes(document.getElementById('user-search')?.value.toLowerCase() || '')).map(([key, u]) => `<tr><td data-label="Name">${u.name}</td><td data-label="Role">${u.role}</td><td data-label="Status">${u.isBanned ? 'Banned' : 'Active'}</td>
+                <td data-label="Actions"><button class="btn-small" onclick="app.admin.showUserDetail('${key}')">Manage</button></td></tr>`).join('')}</tbody></table>`,
+            Keys: () => `<div class="form-group" style="display: flex; gap: 10px; align-items: center;"><input type="number" id="key-validity-days" placeholder="Validity in days (e.g., 15)" style="flex-grow: 1; margin: 0;"><button class="btn" style="width: auto; margin: 0;" onclick="app.admin.generateKey()">Generate Key</button></div><table><thead><tr><th>Key</th><th>Role</th><th>Assigned To</th><th>Expires</th><th>Actions</th></tr></thead><tbody>
+                ${Object.entries(this.state.keys).map(([key, k]) => `<tr><td data-label="Key">${key}</td><td data-label="Role">${k.role}</td><td data-label="Assigned">${this.state.users[key]?.name || 'Unassigned'}</td><td data-label="Expires">${new Date(k.expiry).toLocaleDateString()}</td>
+                    <td data-label="Actions">${key === this.state.currentUserKey ? '(Your Key)' : `<button class="btn-small btn-danger" onclick="app.admin.revokeKey('${key}')">Revoke</button>`}</td></tr>`).join('')}</tbody></table>`,
+            Settings: () => `<h3>Settings</h3><h4>Change My Admin Key</h4><input id="new-admin-key" placeholder="Enter new secret key"><button class="btn" onclick="app.admin.saveAdminKey()">Update My Key</button>`,
+        },
+        showContentForm: (id = null) => {
+            const c = this.state.content.find(i => i.id === id);
+            this.openModal(id ? 'Edit Content' : 'Add Content', `<form onsubmit="app.admin.saveContent(${id}); return false;">
+                <input id="c-topic" placeholder="Topic" value="${c?.topic || ''}" required><input id="c-subject" placeholder="Subject (e.g., Physics)" value="${c?.subject || ''}" required>
+                <input id="c-linkUrl" placeholder="Link URL (e.g., https://...)" value="${c?.linkUrl || ''}"><textarea id="c-notes" placeholder="Notes...">${c?.notes || ''}</textarea>
+                <button type="submit" class="btn">${id ? 'Save Changes' : 'Create'}</button></form>`);
+        },
+        saveContent: (id) => {
+            const data = { topic: document.getElementById('c-topic').value, subject: document.getElementById('c-subject').value, linkUrl: document.getElementById('c-linkUrl').value, notes: document.getElementById('c-notes').value };
+            if(id) { Object.assign(this.state.content.find(c=>c.id===id), data); } 
+            else { this.state.content.unshift({ id: Date.now(), ratings: [], ...data }); }
+            this.admin.openTab(null, 'Content'); this.closeModal();
+        },
+        deleteContent: (id) => { if(confirm('Delete?')) { this.state.content = this.state.content.filter(c=>c.id!==id); this.admin.openTab(null, 'Content'); }},
+        showUserDetail: (key) => {
+            const u = this.state.users[key];
+            this.openModal(`Manage User: ${u.name}`, `<h4>Set Role</h4><select id="user-role-select" onchange="app.state.users['${key}'].role=this.value;"><option>user</option><option>moderator</option><option>admin</option></select>
+                <button class="btn btn-danger" onclick="app.admin.toggleBan('${key}'); app.closeModal(); app.admin.openTab(null, 'Users');">${u.isBanned ? 'Unban' : 'Ban'}</button>`);
+            document.getElementById('user-role-select').value = u.role;
+        },
+        toggleBan: (key) => { this.state.users[key].isBanned = !this.state.users[key].isBanned; },
+        generateKey: () => {
+            const daysInput = document.getElementById('key-validity-days');
+            const days = parseInt(daysInput.value, 10);
+            if (!days || days <= 0) return alert('Please enter a valid number of days.');
+            const key = `User-${Math.random().toString(16).slice(2, 8).toUpperCase()}`;
+            this.state.keys[key] = { role: 'user', expiry: Date.now() + days * 864e5 };
+            this.state.users[key] = { name: `New User (${key.slice(0,4)})`, role: 'user', xp: 0, avatar: '👤', isBanned: false, createdAt: Date.now(), activity: ['Key Created'] };
+            this.admin.openTab(null, 'Keys');
+            daysInput.value = '';
+        },
+        revokeKey: (key) => { if(confirm('Revoke key?')){ delete this.state.keys[key]; this.admin.openTab(null, 'Keys'); }},
+        saveAdminKey: () => {
+            const oldKey = this.state.currentUserKey;
+            const newKey = document.getElementById('new-admin-key').value;
+            if (!newKey || newKey.length < 5) return alert('New key must be at least 5 characters long.');
+            if (this.state.keys[newKey]) return alert('This key is already in use.');
+            
+            this.state.keys[newKey] = this.state.keys[oldKey];
+            delete this.state.keys[oldKey];
+            if (this.state.users[oldKey]) { this.state.users[newKey] = this.state.users[oldKey]; delete this.state.users[oldKey]; }
+            this.state.currentUserKey = newKey;
+            this.logHistory(`Admin key changed from ${oldKey} to ${newKey}`);
+            alert(`Your key has been changed to: ${newKey}`);
+            this.admin.openTab(null, 'Settings');
+        },
+    };
+    
+    // --- USER MODULE ---
+    user = {
+        render: () => {
+            const u = this.state.users[this.state.currentUserKey];
+            document.getElementById('main-app-panel').innerHTML = `
+                <div class="header"><img src="${this.state.platform.logoUrl}" alt="logo"><span>${this.state.platform.name}</span></div>
+                <div class="panel-content scrollable-content" id="user-dashboard">
+                    <h2>Welcome, ${u.name} ${u.avatar}</h2>
+                    <button class="accordion-button">📚 My Learning</button><div class="accordion-panel"><div class="panel-content" id="user-learning"></div></div>
+                    <button class="accordion-button">🏆 My Profile</button><div class="accordion-panel"><div class="panel-content" id="user-profile"></div></div>
+                    <button class="accordion-button">🌐 Community</button><div class="accordion-panel"><div class="panel-content" id="user-community"></div></div>
+                </div>
+                <div class="panel-content" style="border-top: 1px solid var(--border-color);"><button class="btn btn-secondary" onclick="app.logout()">Logout</button></div>`;
+            this.user.renderLearning(); this.user.renderProfile(); this.user.renderCommunity();
+            document.querySelectorAll('#user-dashboard .accordion-button').forEach(button => button.addEventListener('click', () => {
+                const panel = button.nextElementSibling; panel.style.maxHeight = panel.style.maxHeight ? null : panel.scrollHeight + "px";
+            }));
+        },
+        renderLearning: () => {
+            const subjects = [...new Set(this.state.content.map(c=>c.subject))];
+            document.getElementById('user-learning').innerHTML = `<h3>Content Library</h3>
+                <div style="display:flex; gap:10px; margin-bottom:15px;"><select id="subject-filter" onchange="app.user.renderLearning()"><option value="">All Subjects</option>${subjects.map(s=>`<option>${s}</option>`).join('')}</select></div>
+                <table><thead><tr><th>Topic</th><th>Actions</th></tr></thead><tbody id="user-content-list"></tbody></table>`;
+            const filter = document.getElementById('subject-filter').value;
+            document.getElementById('user-content-list').innerHTML = this.state.content
+                .filter(c => !filter || c.subject === filter)
+                .map(c=> `<tr><td data-label="Topic">${c.topic}</td><td data-label="Actions"><button class="btn-small" onclick="window.open('${c.linkUrl}', '_blank')">Open Link</button></td></tr>`).join('');
+        },
+        renderProfile: () => {
+            const u = this.state.users[this.state.currentUserKey];
+            const timeJoined = Math.floor((Date.now() - u.createdAt) / 864e5);
+            document.getElementById('user-profile').innerHTML = `<h3>My Stats</h3><p>Level ${Math.floor(u.xp / 100) + 1} | ${u.xp} XP | Member for ${timeJoined} days</p>
+                <h4>My To-Do List</h4><textarea placeholder="e.g., Review Chapter 3\nFinish Physics module"></textarea>
+                <h4>My Activity</h4><div class="ai-output" style="max-height:100px; overflow-y:auto;">${u.activity.join('<br>')}</div>`;
+        },
+        renderCommunity: () => {
+            const topUsers = Object.values(this.state.users).sort((a,b)=>b.xp-a.xp).slice(0, 3);
+            document.getElementById('user-community').innerHTML = `<h3>Leaderboard</h3><ol>${topUsers.map(user => `<li>${user.name} - ${user.xp} XP</li>`).join('')}</ol>`;
+        },
+    };
+}
+
+const app = new EliteLearningApp();
+</script>
+</body>
+</html>
